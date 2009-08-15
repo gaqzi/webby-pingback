@@ -11,12 +11,10 @@ other sites have a meta-data key that is called _trackback_done_ and
 set it to false. When the ping has been done, successful or otherwise,
 it will be set to true. Eg:
 
-<code><pre>
-  --- 
+  @---@
   title: a spiffy blogpost
   trackback_done: false
-  ---
-</pre></code>
+  @---@
 
 Write your posts, deploy and then run:
 
@@ -41,9 +39,9 @@ file with this content:
 h3. Installing the receiver
 
 To receive pingbacks you've to run a script that can act as a XML-RPC server, I've written a CGI-script using Rubys built-in XML-RPC package (which also can run it as a standalone server or WEBrick servlet), which can be used with a CGI-script that looks like this: (a copy exists in the _ext_ folder)
-<code><pre>
-  #!/usr/bin/env ruby
-  # -*- coding: utf-8 -*-
+
+  @#!/usr/bin/env ruby@
+  @# -*- coding: utf-8 -*-@
   $KCODE = 'u'
 
   module Pingback
@@ -55,13 +53,13 @@ To receive pingbacks you've to run a script that can act as a XML-RPC server, I'
 
   require 'rubygems'
   require 'webby-pingback-xmlrpc.cgi'
-</pre></code>
+
 
 *Note*: _The pingback database, a sqlite database, has to be writable by the server running the cgi-script._
 
 To get the Disqus forum api key you can use a rake-task that is included in the rakefale for this gem. Just run:
 
-  webby pingback:fetch_disqus_forum_key
+  @webby pingback:fetch_disqus_forum_key@
 
 The user key you can get at http://disqus.com/api/get_my_key/ when you're logged in.
 
