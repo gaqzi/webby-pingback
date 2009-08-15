@@ -30,7 +30,7 @@ h2. Installation
 
 Install it through rubygems:  
 
-  @gem install ba-webby-pingback --source gems.github.com@
+  @gem install ba-webby-pingback --source http://gems.github.com@
 
 h3. Installing the sender
 
