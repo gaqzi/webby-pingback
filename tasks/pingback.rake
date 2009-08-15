@@ -10,7 +10,7 @@ namespace :pingback do
     db.each do |page|
       doc = Hpricot(File.read(Webby.site.output_dir + page.url))
       urls = (doc/'/html/body//a[@href]').inject([]) do |memo, a|
-        if a['href'] == ("#{Webby.site.base}/") or a['href'].match(/(disqus)|(webby.rubyforge.org)/)
+        if a['href'] == ("#{Webby.site.base}/") or a['href'].match(/(disqus.com)|(webby.rubyforge.org)/)
           memo
         else
           memo << a['href']

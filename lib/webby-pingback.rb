@@ -44,10 +44,18 @@ module Pingback
     # Tries to find a pingback url from a given URL. If found ping it.
     def start(verbose = false)
       @urls.each do |url|
+      begin
+        print "#{url} => "
         pingback_url = find_pingback_url(url)
         if pingback_url
           send_ping(pingback_url, url)
+        else
+          puts 'Nothing to ping'
         end
+      rescue Exception => e
+        STDERR.puts e.message
+        next
+      end
       end
     end
 
@@ -81,10 +89,11 @@ module Pingback
       uri = URI.parse(xmlrpc_uri)
       server = XMLRPC::Client.new(uri.host, uri.path, uri.port)
       begin
+        print "#{uri.host}#{uri.path}: "
         result = server.call('pingback.ping',
                              @source_url,
                              target)
-        puts "#{uri.host}#{uri.path}: #{result['message']}"
+        puts "#{result['message']}"
       rescue XMLRPC::FaultException => e
         puts "#{uri.host}#{uri.path}: Error -- #{e.message}"
       end
