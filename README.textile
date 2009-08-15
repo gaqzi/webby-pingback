@@ -1,0 +1,70 @@
+h2. Why and what?
+
+I like webby and the idea of having a blog with static pages, not that I ever think I need the speed of it but I at least save some RAM on a daily basis. :)
+
+So this gem can send pingbacks and also receive pingbacks through "Disqus":http://www.disqus.com. What we're actually doing when receiving is just validating it as a "pingback":http://en.wikipedia.org/wiki/Pingback and then send a "trackback":http://en.wikipedia.org/wiki/Trackback to the Disqus page for the post.
+
+h2. Usage
+
+Make sure that all your posts that you want to be able to ping
+other sites have a meta-data key that is called _trackback_done_ and
+set it to false. When the ping has been done, successful or otherwise,
+it will be set to true. Eg:
+
+<code><pre>
+  --- 
+  title: a spiffy blogpost
+  trackback_done: false
+  ---
+</pre></code>
+
+Write your posts, deploy and then run:
+
+  webby pingback:ping
+
+*Note:* _You've to deploy because of how the pingback protocol works._
+
+h2. Installation
+
+Install it through rubygems:  
+
+  gem install ba-webby-pingback --source gems.github.com
+
+h3. Installing the sender
+
+Now you've to install the rake tasks. Do this by either copying the
+pingback.rake file from the gem installation directory or create a new
+file with this content:  
+
+  require 'webby-pingback-rake'
+
+h3. Installing the receiver
+
+To receive pingbacks you've to run a script that can act as a XML-RPC server, I've written a CGI-script using Rubys built-in XML-RPC package (which also can run it as a standalone server or WEBrick servlet), which can be used with a CGI-script that looks like this: (a copy exists in the _ext_ folder)
+<code><pre>
+  #!/usr/bin/env ruby
+  # -*- coding: utf-8 -*-
+  $KCODE = 'u'
+
+  module Pingback
+    Conf = {
+	  :db => 'path-to-sqlite-datbase-that-is-writable-by-server'
+	  :forum_api_key => 'long string from disqus, use rake task to get'
+    }
+  end 
+
+  require 'rubygems'
+  require 'webby-pingback-xmlrpc.cgi'
+</pre></code>
+
+*Note*: _The pingback database, a sqlite database, has to be writable by the server running the cgi-script._
+
+To get the Disqus forum api key you can use a rake-task that is included in the rakefale for this gem. Just run:
+
+  webby pingback:fetch_disqus_forum_key
+
+The user key you can get at http://disqus.com/api/get_my_key/ when you're logged in.
+
+When the CGI-script is setup and is working you only have to add a <link> tag to your blogposts that points to the CGI-script and we're done:
+
+  @<link rel="pingback" href="http://example.com/cgi-bin/pingback-xmlrpc.cgi.rb" />@
