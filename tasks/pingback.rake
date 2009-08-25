@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 
+Loquacious.configuration_for(:webby) do
+  desc 'The find attributes to search for new blog posts to ping with the webby-pingback gem'
+  pingback_find [:all, {:blog_post => true, :pingback_done => false}]
+end
+
 require 'webby-pingback'
 
 namespace :pingback do
   desc 'Ping all links in all new blogposts which hasn\'t been processed'
   task :ping do
     Webby.load_files
-    db = Webby::Resources.pages.find(:all, :blog_post => true, :trackback_done => false)
+    db = Webby::Resources.pages.find(*Webby.site.pingback_find)
     db.each do |page|
       doc = Hpricot(File.read(Webby.site.output_dir + page.url))
       urls = (doc/'/html/body//a[@href]').inject([]) do |memo, a|

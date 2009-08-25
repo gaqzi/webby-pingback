@@ -1,0 +1,5 @@
+== 1.1 / 2009-08-25
+* Added a configuration option for the find call that fetches the posts to ping
+
+== 1.0 / 2009-08-12
+* First release

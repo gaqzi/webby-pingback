@@ -7,38 +7,55 @@ So this gem can send pingbacks and also receive pingbacks through "Disqus":http:
 h2. Usage
 
 Make sure that all your posts that you want to be able to ping
-other sites have a meta-data key that is called _trackback_done_ and
+other sites have a meta-data key that is called _pingback_done_ and
 set it to false. When the ping has been done, successful or otherwise,
-it will be set to true. Eg:
+it will be set to true. Example meta-data:
 
 <pre>
 <code>
   ---
   title: a spiffy blogpost
-  trackback_done: false
+  [..]
+  blog_post: true
+  pingback_done: false
   ---
 </code>
 </pre>
 
-Write your posts, deploy and then run:
+Write your post, deploy and then run:
 
   @webby pingback:ping@
 
-*Note:* _You've to deploy because of how the pingback protocol works._
+*Note:* _You've to deploy because of how the pingback protocol works, the receiving end must be able to retrieve the page trying to send it a pingback_
 
 h2. Installation
 
-Install it through rubygems:  
+Install it through rubygems:
 
   @gem install ba-webby-pingback --source http://gems.github.com@
+
+This library depends on these gems:
+* @amalgalite@ for SQLite database support
+* @json@ for parsing received JSON-data from Disqus
+* @hpricot@ for parsing HTML-sites and finding whether there's a link to your site in the pingback receiver
 
 h3. Installing the sender
 
 Now you've to install the rake tasks. Do this by either copying the
 pingback.rake file from the gem installation directory or create a new
-file with this content:  
+file with this content:
 
   @require 'webby-pingback-rake'@
+
+The sender has an option for finding which posts you want to send pingbacks for, as with any other Webby options you set it in your Sitefile as:
+
+  @SITE.pingback_find = [:all, {:blog_post => true, :pingback_done => false}]@
+
+The above is the default search parameter and it gets passed into the @Webby::Resources.pages.find@ method directly.
+
+You also have to set the @SITE.base@ option in your Sitefile which together with your blog posts gives the task an absolute URL to your post. Without it the sender won't be able to send URLs that the receiver can do a lookup on and your pingbacks will not be received.
+
+  @SITE.base = 'http://example.com/blog'@
 
 h3. Installing the receiver
 
@@ -46,30 +63,44 @@ To receive pingbacks you've to run a script that can act as a XML-RPC server, I'
 
 <pre>
 <code>
-  #!/usr/bin/env ruby  
-  # -*- coding: utf-8 -*-  
-  $KCODE = 'u'  
+  #!/usr/bin/env ruby
+  # -*- coding: utf-8 -*-
+  $KCODE = 'u'
 
-  module Pingback  
-    Conf = {  
-      :db => 'path-to-sqlite-datbase-that-is-writable-by-server'  
-      :forum_api_key => 'long string from disqus, use rake task to get'  
-    }  
-  end  
+  module Pingback
+    Conf = {
+      :db => 'path-to-sqlite-datbase-that-is-writable-by-server'
+      :forum_api_key => 'long string from disqus, use rake task to get'
+    }
+  end
 
-  require 'rubygems'  
-  require 'webby-pingback-xmlrpc.cgi'  
+  require 'rubygems'
+  require 'webby-pingback-xmlrpc.cgi'
 </code>
 </pre>
 
-*Note*: _The pingback database, a sqlite database, has to be writable by the server running the cgi-script._
+*Note*: _The pingback database, a sqlite database, has to be writable by the server running the cgi-script. The database will be created if it doesn't exist, so you don't have to do anything to create it. The database is used to record incoming pingbacks so that we don't send multiple trackbacks to Disqus for the same link._
 
-To get the Disqus forum api key you can use a rake-task that is included in the rakefale for this gem. Just run:
+To get the Disqus forum api key you can use a rake-task that is included in the rakefile for this gem. Just run:
 
   @webby pingback:fetch_disqus_forum_key@
 
-The user key you can get at http://disqus.com/api/get_my_key/ when you're logged in.
+The user key which the task asks for you can get at http://disqus.com/api/get_my_key/ when you're logged in to Disqus.
 
 When the CGI-script is setup and is working you only have to add a @<link>@ tag to your blogposts that points to the CGI-script and we're done:
 
   @<link rel="pingback" href="http://example.com/cgi-bin/pingback-xmlrpc.cgi.rb" />@
+
+h3. Setting up CGI with Lighttpd
+
+To get CGI-scripts to work with "ligghttpd":http://lighttpd.net you just have to activate the CGI module and then tell lighty the path to where you store the script, aka the cgi-bin directory.
+
+Note that the receiver proxy doesn't in any way require webby, so if you have any other static site you can as well use this script to get pingbacks with Disqus. :)
+
+<pre>
+<code>
+  server.modules += ("mod_cgi")
+  alias.url += ("cgi-bin" => "/var/www/cgi-bin/")
+  cgi.assign = ("" => "")
+</code>
+</pre>
