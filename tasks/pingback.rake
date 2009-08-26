@@ -1,30 +1,35 @@
 # -*- coding: utf-8 -*-
 
+require 'webby-pingback'
+
 Loquacious.configuration_for(:webby) do
   desc 'The find attributes to search for new blog posts to ping with the webby-pingback gem'
   pingback_find [:all, {:blog_post => true, :pingback_done => false}]
-end
 
-require 'webby-pingback'
+  desc 'The xpath expression used to find links in your new post to ping with the webby-pingback gem'
+  pingback_find_links_expression '/html/body//a[@href]'
+end
 
 namespace :pingback do
   desc 'Ping all links in all new blogposts which hasn\'t been processed'
   task :ping do
-    Webby.load_files
-    db = Webby::Resources.pages.find(*Webby.site.pingback_find)
-    db.each do |page|
-      doc = Hpricot(File.read(Webby.site.output_dir + page.url))
-      urls = (doc/'/html/body//a[@href]').inject([]) do |memo, a|
-        if a['href'] == ("#{Webby.site.base}/") or a['href'].match(/(disqus.com)|(webby.rubyforge.org)/)
-          memo
-        else
-          memo << a['href']
-        end
-     end.uniq # /doc
+    urls = Pingback.find_links
 
-      pinger = Pingback::Sender.new("#{Webby.site.base}#{page.url}", urls)
-      pinger.start
-      Pingback.toggle_trackback_done(page.path)
+    unless urls.empty?
+      urls.each do |page, urls|
+        pinger = Pingback::Sender.new("#{Webby.site.base}#{page.url}", urls)
+        pinger.start
+        Pingback.toggle_trackback_done(page.path)
+      end
+    end
+  end
+
+  desc 'Print out links to ping next time you send out pings'
+  task :print_outgoing_links do
+    urls = Pingback.find_links
+    urls.each do |page, urls|
+      puts page.url + ':'
+      urls.each {|url| puts "\t#{url}" }
     end
   end
 
@@ -58,5 +63,26 @@ namespace :pingback do
         STDERR.puts forum_api_key.inspect
       end
     end
+  end
+end
+
+module Pingback
+  def self.find_links
+    Webby.load_files
+    db = Webby::Resources.pages.find(*Webby.site.pingback_find)
+    output = []
+    db.each do |page|
+      doc = Hpricot(File.read(File.join(Webby.site.output_dir, page.url)))
+      urls = doc.search(Webby.site.pingback_find_links_expression).inject([]) do |memo, a|
+        if a['href'] == ("#{Webby.site.base}/")
+          memo
+        else
+          memo << a['href']
+        end
+     end.uniq # /doc
+      output << [page, urls]
+    end
+
+    output
   end
 end

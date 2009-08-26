@@ -45,13 +45,21 @@ Now you've to install the rake tasks. Do this by either copying the
 pingback.rake file from the gem installation directory or create a new
 file with this content:
 
-  @require 'webby-pingback-rake'@
+<pre>
+<code>
+  require 'webby-pingback-rake'
 
-The sender has an option for finding which posts you want to send pingbacks for, as with any other Webby options you set it in your Sitefile as:
+  Loquacious.configuration_for(:webby) do
+    desc 'The find attributes to search for new blog posts to ping with the webby-pingback gem'
+    pingback_find [:all, {:blog_post => true, :pingback_done => false}]
 
-  @SITE.pingback_find = [:all, {:blog_post => true, :pingback_done => false}]@
+    desc 'The xpath expression used to find links in your new post to ping with the webby-pingback gem'
+    pingback_find_links_expression '/html/body//a[@href]'
+  end
+</code>
+</pre>
 
-The above is the default search parameter and it gets passed into the @Webby::Resources.pages.find@ method directly.
+Remember to change the configuration options to suit your needs. :)
 
 You also have to set the @SITE.base@ option in your Sitefile which together with your blog posts gives the task an absolute URL to your post. Without it the sender won't be able to send URLs that the receiver can do a lookup on and your pingbacks will not be received.
 
